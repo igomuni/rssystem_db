@@ -1,0 +1,26 @@
+.ignore/
+
+duckdb_files/
+
+download/
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
