@@ -5,6 +5,7 @@
     },
     "query_runner": {
         "default_query_file": "default_query.sql",
+        "query_directory": "sql",
         "results_folder": "results",
         "default_output_filename": "query_result.csv"
     }
