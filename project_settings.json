@@ -1,0 +1,11 @@
+{
+    "database": {
+        "input_zip_folder": "download",
+        "output_db_file": "rs_database.duckdb"
+    },
+    "query_runner": {
+        "default_query_file": "default_query.sql",
+        "results_folder": "results",
+        "default_output_filename": "query_result.csv"
+    }
+}

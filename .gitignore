@@ -1,8 +1,8 @@
+# Project's own
 .ignore/
-
-duckdb_files/
-
+*.duckdb
 download/
+results/
 
 # VSCode
 .vscode/

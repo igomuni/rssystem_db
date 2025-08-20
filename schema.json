@@ -1,7 +1,7 @@
 {
-    "tbl_1_1_RS_2024": {
+    "tbl_1_1": {
+        "view_name": "基本情報_組織情報",
         "original_filename": "1-1_RS_2024_基本情報_組織情報.zip",
-        "database_file": "tbl_1_1_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -137,9 +137,9 @@
             }
         ]
     },
-    "tbl_1_2_RS_2024": {
+    "tbl_1_2": {
+        "view_name": "基本情報_事業概要等",
         "original_filename": "1-2_RS_2024_基本情報_事業概要等.zip",
-        "database_file": "tbl_1_2_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -335,9 +335,9 @@
             }
         ]
     },
-    "tbl_1_3_RS_2024": {
+    "tbl_1_3": {
+        "view_name": "基本情報_政策・施策、法令等",
         "original_filename": "1-3_RS_2024_基本情報_政策・施策、法令等.zip",
-        "database_file": "tbl_1_3_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -509,9 +509,9 @@
             }
         ]
     },
-    "tbl_1_4_RS_2024": {
+    "tbl_1_4": {
+        "view_name": "基本情報_補助率等",
         "original_filename": "1-4_RS_2024_基本情報_補助率等.zip",
-        "database_file": "tbl_1_4_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -623,9 +623,9 @@
             }
         ]
     },
-    "tbl_1_5_RS_2024": {
+    "tbl_1_5": {
+        "view_name": "基本情報_関連事業",
         "original_filename": "1-5_RS_2024_基本情報_関連事業.zip",
-        "database_file": "tbl_1_5_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -731,9 +731,9 @@
             }
         ]
     },
-    "tbl_2_1_RS_2024": {
+    "tbl_2_1": {
+        "view_name": "予算・執行_サマリ",
         "original_filename": "2-1_RS_2024_予算・執行_サマリ.zip",
-        "database_file": "tbl_2_1_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -1001,9 +1001,9 @@
             }
         ]
     },
-    "tbl_2_2_RS_2024": {
+    "tbl_2_2": {
+        "view_name": "予算・執行_予算種別・歳出予算項目",
         "original_filename": "2-2_RS_2024_予算・執行_予算種別・歳出予算項目.zip",
-        "database_file": "tbl_2_2_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -1163,9 +1163,9 @@
             }
         ]
     },
-    "tbl_3_1_RS_2024": {
+    "tbl_3_1": {
+        "view_name": "効果発現経路_目標・実績",
         "original_filename": "3-1_RS_2024_効果発現経路_目標・実績.zip",
-        "database_file": "tbl_3_1_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -1661,9 +1661,9 @@
             }
         ]
     },
-    "tbl_3_2_RS_2024": {
+    "tbl_3_2": {
+        "view_name": "効果発現経路_目標のつながり",
         "original_filename": "3-2_RS_2024_効果発現経路_目標のつながり.zip",
-        "database_file": "tbl_3_2_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -1805,9 +1805,9 @@
             }
         ]
     },
-    "tbl_4_1_RS_2024": {
+    "tbl_4_1": {
+        "view_name": "点検・評価",
         "original_filename": "4-1_RS_2024_点検・評価.zip",
-        "database_file": "tbl_4_1_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -2033,9 +2033,9 @@
             }
         ]
     },
-    "tbl_5_1_RS_2024": {
+    "tbl_5_1": {
+        "view_name": "支出先_支出情報",
         "original_filename": "5-1_RS_2024_支出先_支出情報.zip",
-        "database_file": "tbl_5_1_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -2231,9 +2231,9 @@
             }
         ]
     },
-    "tbl_5_2_RS_2024": {
+    "tbl_5_2": {
+        "view_name": "支出先_支出ブロックのつながり",
         "original_filename": "5-2_RS_2024_支出先_支出ブロックのつながり.zip",
-        "database_file": "tbl_5_2_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -2369,9 +2369,9 @@
             }
         ]
     },
-    "tbl_5_3_RS_2024": {
+    "tbl_5_3": {
+        "view_name": "支出先_費目・使途",
         "original_filename": "5-3_RS_2024_支出先_費目・使途.zip",
-        "database_file": "tbl_5_3_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -2495,9 +2495,9 @@
             }
         ]
     },
-    "tbl_5_4_RS_2024": {
+    "tbl_5_4": {
+        "view_name": "支出先_国庫債務負担行為等による契約",
         "original_filename": "5-4_RS_2024_支出先_国庫債務負担行為等による契約.zip",
-        "database_file": "tbl_5_4_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",
@@ -2663,9 +2663,9 @@
             }
         ]
     },
-    "tbl_6_1_RS_2024": {
+    "tbl_6_1": {
+        "view_name": "その他備考",
         "original_filename": "6-1_RS_2024_その他備考.zip",
-        "database_file": "tbl_6_1_rs_2024.duckdb",
         "columns": [
             {
                 "name": "シート種別",

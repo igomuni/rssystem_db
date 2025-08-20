@@ -1,48 +1,75 @@
 import duckdb
 import pandas as pd
 import zipfile
+import json
+import sys
 from pathlib import Path
 
-# --- 設定 ---
-# ▼▼▼【変更点】ZIPファイルの格納フォルダ名を 'download' に変更▼▼▼
-ZIP_FOLDER_PATH = 'download'
-OUTPUT_DB_FOLDER = 'duckdb_files'
+SETTINGS_FILE = 'project_settings.json'
 
-def import_zips_to_individual_dbs():
-    """
-    ZIPファイルを個別のDuckDBファイルに1テーブルずつ変換し、
-    指定されたフォルダに出力します。
-    """
-    print(f"処理を開始します。出力先フォルダ: '{OUTPUT_DB_FOLDER}'")
+def load_settings():
+    """設定ファイルを読み込む"""
+    try:
+        with Path(SETTINGS_FILE).open('r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"[エラー] 設定ファイル '{SETTINGS_FILE}' の読み込みに失敗しました: {e}", file=sys.stderr)
+        sys.exit(1)
 
-    output_path = Path(OUTPUT_DB_FOLDER)
-    output_path.mkdir(exist_ok=True)
+def import_zips_to_single_db():
+    settings = load_settings()
+    try:
+        zip_folder_path = settings['database']['input_zip_folder']
+        output_db_file = Path(settings['database']['output_db_file'])
+    except KeyError as e:
+        print(f"[エラー] 設定ファイルに必要なキー {e} がありません。", file=sys.stderr)
+        sys.exit(1)
+    
+    print(f"処理を開始します。出力DBファイル: '{output_db_file}'")
 
-    zip_files_list = list(Path(ZIP_FOLDER_PATH).glob('*.zip'))
+    if output_db_file.exists():
+        output_db_file.unlink()
+
+    con = duckdb.connect(database=str(output_db_file), read_only=False)
+    
+    index_records = []
+    # ▼▼▼【変更点1】VIEW名の衝突を避けるために、作成したVIEW名を記録するセット▼▼▼
+    created_views = set()
+
+    zip_files_list = list(Path(zip_folder_path).glob('*.zip'))
     if not zip_files_list:
-        print(f"エラー: フォルダ '{ZIP_FOLDER_PATH}' 内にZIPファイルが見つかりませんでした。")
+        print(f"エラー: フォルダ '{zip_folder_path}' 内にZIPファイルが見つかりませんでした。")
         return
 
     print(f"{len(zip_files_list)}個のZIPファイルを検出しました。")
 
     for zip_path in zip_files_list:
         try:
-            base_name_zip = zip_path.name
+            # pathlib.stem を使って拡張子を除いたファイル名を取得 (例: 1-1_RS_2024_基本情報_組織情報)
+            base_name = zip_path.stem
+            parts = base_name.split('_')
 
-            name_parts = base_name_zip.replace('.zip', '').split('_', 3)
-            short_name = "_".join(name_parts[:3])
-            table_identifier = short_name.replace('-', '_')
-            table_name = f'tbl_{table_identifier}'
+            # ▼▼▼【変更点2】新しい命名規則のロジック▼▼▼
+            # テーブル名: '1-1' -> 'tbl_1_1'
+            id_part = parts[0].replace('-', '_')
+            table_name = f'tbl_{id_part}'
             
-            db_file_path = output_path / f"{table_name}.duckdb"
+            # VIEW名: '基本情報_組織情報'
+            # ファイル名の3番目の '_' 以降を結合
+            description_parts = parts[3:]
+            view_name_raw = "_".join(description_parts)
 
-            print(f"\n処理中: '{base_name_zip}' -> DBファイル: '{db_file_path}'")
+            # VIEW名の衝突回避処理
+            view_name = view_name_raw
+            counter = 2
+            while view_name in created_views:
+                view_name = f"{view_name_raw}_{counter}"
+                counter += 1
+            created_views.add(view_name)
+            # ▲▲▲ ここまで ▲▲▲
             
-            if db_file_path.exists():
-                db_file_path.unlink()
-
-            con = duckdb.connect(database=str(db_file_path), read_only=False)
-
+            print(f"\n処理中: '{zip_path.name}' -> テーブル: '{table_name}', VIEW: '{view_name}'")
+            
             with zipfile.ZipFile(zip_path, 'r') as zf:
                 csv_filename_in_zip = zf.namelist()[0]
                 with zf.open(csv_filename_in_zip) as csv_file:
@@ -51,21 +78,31 @@ def import_zips_to_individual_dbs():
                     except UnicodeDecodeError:
                         csv_file.seek(0)
                         df = pd.read_csv(csv_file, encoding='shift_jis', low_memory=False)
-
+            
             con.from_df(df).create(table_name)
             print(f" -> テーブル '{table_name}' に {len(df):,} 行をインポートしました。")
 
-            meta_df = pd.DataFrame([{'original_filename': base_name_zip}])
-            con.from_df(meta_df).create('_metadata')
-            print(f" -> メタデータ (_metadata) を作成しました。")
+            con.execute(f"CREATE OR REPLACE VIEW \"{view_name}\" AS SELECT * FROM {table_name};")
+            # 日本語のVIEW名を "" で囲むことで、より安全に作成
+            print(f" -> VIEW '{view_name}' を作成しました。")
             
-            con.close()
+            index_records.append({
+                'table_name': table_name,
+                'view_name': view_name,
+                'original_filename': zip_path.name
+            })
 
         except Exception as e:
-            print(f" !! エラー: ファイル '{zip_path.name}' の処理中に問題が発生しました。スキップします。")
-            print(f"    詳細: {e}")
+            print(f" !! エラー: ファイル '{zip_path.name}' の処理中にエラー: {e}", file=sys.stderr)
 
-    print(f"\nすべての処理が完了しました。データは '{OUTPUT_DB_FOLDER}' フォルダに保存されています。")
+    if index_records:
+        print("\nインデックス用テーブル 'table_index' を作成します...")
+        index_df = pd.DataFrame(index_records)
+        con.from_df(index_df).create("table_index")
+        print(" -> 'table_index' を作成しました。")
+
+    con.close()
+    print(f"\nすべての処理が完了しました。データは '{output_db_file}' に保存されています。")
 
 if __name__ == '__main__':
-    import_zips_to_individual_dbs()
+    import_zips_to_single_db()
