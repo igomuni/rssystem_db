@@ -1,6 +1,0 @@
-SELECT *
-FROM "支出先_支出情報"
-WHERE "支出先名" LIKE '%会社%'
-  AND "金額" IS NOT NULL
-ORDER BY COALESCE("金額", 0) DESC
-LIMIT 100;

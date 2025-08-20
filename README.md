@@ -18,24 +18,31 @@
 - **直感的なクエリ:** `SELECT * FROM "基本情報_組織情報"` のように、日本語の分かりやすいVIEW名を使ってSQLクエリを記述できます。
 - **設定ファイル駆動:** `project_settings.json` で入出力パスやデフォルトの挙動を管理するため、コードを変更することなく環境に適応できます。
 - **再現性とデータ分離:** ソースコードとデータファイルを分離し、誰でも同じデータベースを再現できるクリーンな構成です。
-- **強力な分析ツール:** 付属のSQL実行スクリプト (`run_query.py`) を使って、コマンドラインから柔軟なデータ抽出・分析が可能です。
+- **強力な分析ツール:** 付属のSQL実行スクリプト (`run_query.py`) や、特定の分析スクリプト (`analysis/`内) を使って、柔軟なデータ抽出・分析が可能です。
 
 ## プロジェクト構造
 
 ```
 .
-├── .gitignore              # Gitの管理対象外ファイルを指定
-├── default_query.sql       # デフォルトで実行されるサンプルSQL
-├── export_schemas.py       # スキーマ出力スクリプト
-├── import_zips_to_duckdb.py # DB生成スクリプト
-├── LICENSE                 # ライセンスファイル
-├── project_settings.json   # プロジェクトの全設定を管理するファイル
-├── README.md               # このファイル
-├── requirements.txt        # 必要なPythonライブラリ
-├── run_query.py            # SQL実行スクリプト
-├── schema.json             # 生成されたスキーマ定義
-├── schema.yaml             # 生成されたスキーマ定義
-└── verify_database.py      # DB検証スクリプト
+├── .gitignore
+├── LICENSE
+├── README.md
+├── requirements.txt
+|
+├── project_settings.json   # ★ プロジェクト全体の「設計図」
+|
+├── import_zips_to_duckdb.py # DBを「作る」スクリプト (コア)
+├── verify_database.py      # DBを「確かめる」スクリプト (コア)
+├── export_schemas.py       # DBの「構造を書き出す」スクリプト (コア)
+├── run_query.py            # DBに汎用的な「質問をする」ツール (コア)
+|
+├── sql/                    # 汎用的な「質問文（SQL）」の置き場所
+│   ├── README.md
+│   ├── default_query.sql
+│   └── ...
+|
+└── analysis/               # ★ 特定の「分析や応用」を行うスクリプトの置き場所
+    └── get_business_details.py
 ```
 
 ## 使い方
@@ -51,16 +58,12 @@
     ```
 4.  `project_settings.json` で指定された入力フォルダ（デフォルト: `download/`）を作成し、行政事業レビューシートのZIPファイルを格納します。
 
-### 2. データベースの生成
+### 2. データベースの生成と検証
 
-ローカル環境で単一のデータベースファイルを生成します。`project_settings.json`で指定されたパスに `.duckdb` ファイルが生成されます。
-
-```bash
-python import_zips_to_duckdb.py
-```
-
-### 3. データベースの検証とスキーマ出力
-
+- **DB生成:** ローカル環境で単一のデータベースファイルを生成します。
+  ```bash
+  python import_zips_to_duckdb.py
+  ```
 - **検証:** 生成されたDBファイル内のテーブル、VIEW、インデックスが正しいか検証します。
   ```bash
   python verify_database.py
@@ -70,48 +73,40 @@ python import_zips_to_duckdb.py
   python export_schemas.py
   ```
 
-### 4. データベースへのクエリ実行
+### 3. データ分析の実行
 
-`run_query.py` を使って、データベースにSQLクエリを実行します。クエリは**日本語のVIEW名**を使って書くことを推奨します。
+#### A) 汎用的なSQLクエリの実行
 
-- **デフォルトクエリを実行 (結果はCSVに出力):**
+`run_query.py` を使って、`sql/` フォルダ内のSQLクエリなどを実行します。
+
+- **デフォルトクエリを実行 (結果は`results/`にCSVで保存):**
   ```bash
   python run_query.py
   ```
-  `project_settings.json` で指定されたデフォルトクエリが実行され、結果が `results/` フォルダに保存されます。
-
 - **指定したSQLファイルを実行し、結果をファイルに出力:**
   ```bash
-  python run_query.py -q sample_query.sql -o my_analysis.csv
+  python run_query.py -q sql/my_analysis.sql -o my_result.csv
   ```
 
-- **結果をファイルに出力せず、コンソールで確認するだけ:**
+#### B) 特定の分析スクリプトの実行
+
+`analysis/` フォルダ内のスクリプトを使い、より高度な分析を行います。
+
+- **特定の予算事業IDに紐づく全情報をJSONで出力:**
   ```bash
-  python run_query.py --no-output
+  # ID:7259の情報を、results/business_7259.json に保存
+  python analysis/get_business_details.py 7259 -o business_7259.json
   ```
 
 ## データセットの配布と利用 (GitHub Releases)
 
-このプロジェクトでは、生成されたデータベースファイルを **GitHub Releases** を利用して配布します。
+このプロジェクトでは、生成されたデータベースファイルを **GitHub Releases** を利用して配布します。（手順の詳細は[こちら](https://docs.github.com/ja/repositories/releasing-projects-on-github/managing-releases-in-a-repository)を参照）
 
 ### データセットの発行 (開発者向け)
 
 1.  上記の手順で単一のデータベースファイル（例: `rs_database.duckdb`）を生成します。
 2.  このDBファイルを一つのZIPファイル（例: `database_v1.0.zip`）に圧縮します。
 3.  本リポジトリの **Releases** ページで新しいリリースを作成し、圧縮したZIPファイルをアセットとしてアップロードします。
-
-### データセットの利用 (アプリケーション向け)
-
-WEBアプリケーション等でデータベースを利用する場合、`setup_database.py` を使って自動でデータをダウンロード・展開できます。
-
-`setup_database.py` 内の以下の項目を、対象のリリースタグに合わせて編集してください。
-- `GITHUB_OWNER`, `GITHUB_REPO`, `RELEASE_TAG`, `ASSET_FILENAME`
-
-その後、以下のコマンドを実行するとDBファイルがセットアップされます。
-
-```bash
-python setup_database.py
-```
 
 ## ライセンス
 
