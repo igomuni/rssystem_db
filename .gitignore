@@ -1,6 +1,7 @@
 # Project's own
 .ignore/
 *.duckdb
+rs_database*.zip
 download/
 results/
 
