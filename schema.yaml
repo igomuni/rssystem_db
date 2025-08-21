@@ -1486,6 +1486,270 @@ tbl_5_1:
     type: BOOLEAN
     notnull: false
     pk: false
+tbl_5_1_details:
+  view_name: 支出先_支出情報_明細
+  original_filename: 5-1_RS_2024_支出先_支出情報.zip
+  columns:
+  - name: シート種別
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 事業年度
+    type: BIGINT
+    notnull: false
+    pk: false
+  - name: 予算事業ID
+    type: BIGINT
+    notnull: false
+    pk: false
+  - name: 事業名
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 府省庁の建制順
+    type: BIGINT
+    notnull: false
+    pk: false
+  - name: 政策所管府省庁
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 府省庁
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 局・庁
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 部
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 課
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 室
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 班
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 係
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 支出先ブロック番号
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 支出先ブロック名
+    type: INTEGER
+    notnull: false
+    pk: false
+  - name: 支出先の数
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 事業を行う上での役割
+    type: INTEGER
+    notnull: false
+    pk: false
+  - name: ブロックの合計支出額
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 支出先名
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 法人番号
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 所在地
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 法人種別
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: その他支出先
+    type: BOOLEAN
+    notnull: false
+    pk: false
+  - name: 支出先の合計支出額
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 契約概要
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 金額
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 契約方式等
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 具体的な契約方式等
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 入札者数
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 落札率
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 一者応札・一者応募又は競争性のない随意契約となった理由及び改善策（支出額10億円以上）
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: その他の契約
+    type: BOOLEAN
+    notnull: false
+    pk: false
+tbl_5_1_summary:
+  view_name: 支出先_支出情報_サマリー
+  original_filename: 5-1_RS_2024_支出先_支出情報.zip
+  columns:
+  - name: シート種別
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 事業年度
+    type: BIGINT
+    notnull: false
+    pk: false
+  - name: 予算事業ID
+    type: BIGINT
+    notnull: false
+    pk: false
+  - name: 事業名
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 府省庁の建制順
+    type: BIGINT
+    notnull: false
+    pk: false
+  - name: 政策所管府省庁
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 府省庁
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 局・庁
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 部
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 課
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 室
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 班
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 係
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 支出先ブロック番号
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 支出先ブロック名
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 支出先の数
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 事業を行う上での役割
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: ブロックの合計支出額
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 支出先名
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 法人番号
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 所在地
+    type: VARCHAR
+    notnull: false
+    pk: false
+  - name: 法人種別
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: その他支出先
+    type: BOOLEAN
+    notnull: false
+    pk: false
+  - name: 支出先の合計支出額
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 契約概要
+    type: INTEGER
+    notnull: false
+    pk: false
+  - name: 金額
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 契約方式等
+    type: INTEGER
+    notnull: false
+    pk: false
+  - name: 具体的な契約方式等
+    type: INTEGER
+    notnull: false
+    pk: false
+  - name: 入札者数
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 落札率
+    type: DOUBLE
+    notnull: false
+    pk: false
+  - name: 一者応札・一者応募又は競争性のない随意契約となった理由及び改善策（支出額10億円以上）
+    type: INTEGER
+    notnull: false
+    pk: false
+  - name: その他の契約
+    type: INTEGER
+    notnull: false
+    pk: false
 tbl_5_2:
   view_name: 支出先_支出ブロックのつながり
   original_filename: 5-2_RS_2024_支出先_支出ブロックのつながり.zip
