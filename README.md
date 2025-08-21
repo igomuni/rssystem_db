@@ -35,10 +35,10 @@
 ├── verify_database.py      # DBを「確かめる」スクリプト (コア)
 ├── export_schemas.py       # DBの「構造を書き出す」スクリプト (コア)
 ├── run_query.py            # DBに汎用的な「質問をする」ツール (コア)
+├── default_query.sql       # デフォルトSQLクエリ(参考用)
 |
 ├── sql/                    # 汎用的な「質問文（SQL）」の置き場所
 │   ├── README.md
-│   ├── default_query.sql
 │   └── ...
 |
 └── analysis/               # ★ 特定の「分析や応用」を行うスクリプトの置き場所
