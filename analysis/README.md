@@ -6,9 +6,11 @@
 
 ---
 
-## スクリプト一覧
+## スクリプト一覧と分析シナリオ
 
-### `get_business_details.py`
+### 1. 個別事業の詳細調査
+
+#### `get_business_details.py`
 
 - **目的:**
   指定された単一の`予算事業ID`に紐づく、すべてのテーブルの情報を一括で抽出し、階層化された単一のJSONファイルとして出力します。特定の事業を詳細に調査する際の元データ作成に利用します。
@@ -18,40 +20,59 @@
   # 予算事業ID: 7259 の全情報を、results/フォルダに business_7259.json として保存
   python analysis/get_business_details.py 7259 -o business_7259.json
   ```
+
 ---
 
-### `analyze_related_projects.py`
+### 2. データ品質の「健康診断」
+
+#### `generate_data_quality_report.py`
 
 - **目的:**
-  指定された`予算事業ID`（または予算額が最大の事業）について、「関連事業」の構成を分析し、サマリーと詳細リストを出力します。巨大事業がどのような他の事業と連携しているかを調査するために使用します。
-
-- **使い方:**
-  - **【自動】予算額最大の事業を分析する場合:**
-    ```bash
-    python analysis/analyze_related_projects.py
-    ```
-  - **【手動】特定の予算事業IDを指定して分析する場合:**
-    ```bash
-    python analysis/analyze_related_projects.py 7259
-    ```
-  
-  実行すると、コンソールに分析サマリーが表示され、`results/`フォルダに詳細な関連事業リストのCSVファイルが `related_projects_for_ID_XXXX.csv` のような名前で保存されます。
----
-
-### `generate_data_quality_report.py`
-
-- **目的:**
-  データベース全体をスキャンし、「支出先名が空欄」「予算額が0以下」といった、データ品質に関する潜在的な問題を網羅的に洗い出します。分析を始める前のデータクレンジングや、データの健全性を確認するために使用します。
+  データベース全体をスキャンし、「支出先名が空欄」「予算額が0以下」といった、データ品質に関する潜在的な問題を網羅的に洗い出します。分析を始める前のデータクレンジングや、データの健全性を確認するために使用します。ルールはスクリプト内で定義されており、拡張も可能です。
 
 - **使い方:**
   ```bash
   python analysis/generate_data_quality_report.py
   ```
-  実行すると、コンソールに検出された問題のサマリーが表示され、`results/`フォルダに詳細な問題リストが `data_quality_long_list.csv` という名前で保存されます。
+  実行すると、コンソールに問題のサマリーが表示され、`results/`フォルダに詳細な問題リスト (`data_quality_long_list.csv`) が保存されます。
 
-- **拡張方法:**
-  新しいチェック項目を追加したい場合は、スクリプト上部の `CHECKS_TO_PERFORM` リストに新しい辞書を追加するだけで、簡単に診断項目を拡張できます。
 ---
+
+### 3. 予算と支出のバランス分析（一連の調査）
+
+国の予算が適切に執行されているかを検証するための一連のスクリプトです。この調査を通じて、このデータセットの会計上の重要な特性が明らかになりました。
+
+#### Step 1: `calculate_execution_rates.py` (基礎データの作成)
+
+- **目的:** 全事業の**予算執行率**を計算し、府省庁情報を付与した分析の基礎となるサマリーファイルを作成します。
+- **使い方:** `python analysis/calculate_execution_rates.py`
+
+#### Step 2: `check_project_balance.py` (矛盾の発見)
+
+- **目的:** 事業単位で「支出総額」が「予算総額」を上回っている、**「予算超過」**が疑われる事業をリストアップします。
+- **使い方:** `python analysis/check_project_balance.py`
+
+#### Step 3: `analyze_project_balance.py` (原因の推定)
+
+- **目的:** Step 2で発見された「予算超過」事業について、その原因が**「国庫債務負担行為」**や**「マイナス予算」**などに起因するのかを自動で推定・分類し、詳細なレポートを出力します。
+- **使い方:** `python analysis/analyze_project_balance.py`
+
+#### Step 4: `verify_kokko_saimu_hypothesis.py` (仮説の最終検証)
+
+- **目的:** 「予算超過の原因は国庫債務負担行為である」という仮説を逆検証します。このスクリプトにより、このデータセットでは**ほぼ全ての事業が国庫債務負担行為として登録されている**という重要な法則が発見されました。
+- **使い方:** `python analysis/verify_kokko_saimu_hypothesis.py`
+
+#### Step 5: `compare_execution_rates.py` & `find_consistent_projects.py` (最終結論)
+
+- **目的:**
+  - `compare...`: 元データにある`執行率`と、支出情報から計算した`実態ベースの執行率`の**乖離が大きい**事業をリストアップします。
+  - `find...`: 逆に、2つの執行率が**ほぼ一致**する事業をリストアップします。
+- **結論:** この比較により、「予算超過」はデータ入力ミスではなく、**単年度の予算管理情報と、複数年度契約を含む支出実態情報という、異なる会計レイヤーのデータを比較したことによる「見かけ上の矛盾」である**ことが結論付けられました。
+- **使い方:**
+  ```bash
+  python analysis/compare_execution_rates.py
+  python analysis/find_consistent_projects.py
+  ```
 
 ## 分析結果の活用
 
