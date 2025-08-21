@@ -1,0 +1,3 @@
+SELECT *
+FROM "支出先_支出情報"
+LIMIT 100;
