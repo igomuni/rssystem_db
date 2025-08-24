@@ -1,218 +1,223 @@
-# Colabでの手動RAG分析手順書
+# RSシステム分析プラットフォーム on Google Colab スタートガイド
 
-## 1. 目的と概要
+## 1. 概要
 
-本ドキュメントは、Google Generative AI等のAPI利用上限に達した場合でも、Google Colaboratory (Colab)と大規模言語モデル(LLM)搭載のAIアシスタント（**思考エンジン**として機能）との対話を通じて、RAG (Retrieval-Augmented Generation) を用いたデータ分析を継続するための手順を記録するものです。
+このドキュメントは、日本の行政事業レビューシート（RSシステム）の元データ（ZIP/CSV）から、Google Colaboratory (Colab)上で高度な自然言語分析（RAG）を行うための、完全なセットアップ手順を記したものです。
 
-このプロセスは、APIを介した自動処理を「手動」で再現することにより、RAGシステムの内部動作の理解を深め、対話形式でのデバッグを可能にします。また、本手順は**CPU環境**でも十分に機能することが実証されています。
+**最終目標:**
+ローカルPCでデータ基盤を構築し、その成果物をGoogle Drive経由でColabに持ち込み、対話型AIアシスタントと協力して、自然言語でのデータベース分析を実現します。
 
-## 2. 事前準備
+## 2. 【Phase 1】 ローカルPCでのデータ基盤構築
 
-### 2.1. Google Driveの準備
-- `rs_database.duckdb` (DuckDBデータベース)
-- `vector_store/` (ChromaDBベクトルストア)
-を、自身のGoogle Driveの任意の場所にアップロードしておきます。
+このフェーズは、分析の土台となる2つの重要なデータベースを、ローカルPC上で生成する作業です。**元データが更新された場合にのみ、再実行が必要**です。
 
-### 2.2. AIアシスタントの準備
-本プロジェクトの背景を理解し、思考エンジンとして機能できる高度なAIアシスタント（例: Gemini）との対話画面を開いておきます。
+### 2.1. 準備
 
-### 2.3. CPUとGPUの自動切り替えについて
-この手順書で提供されるスクリプトは、Colab環境にGPUが割り当てられているかを自動で判別し、最適なデバイス（GPUまたはCPU）を利用するように設計されています。
+1.  **プロジェクトのクローン:**
+    このプロジェクトのGitHubリポジトリを、ローカルPCにクローンします。
+    ```bash
+    git clone https://github.com/igomuni/rssystem_db.git
+    cd rssystem_db
+    ```
+2.  **必要なライブラリのインストール:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  **元データの配置:**
+    `project_settings.json`で定義された入力フォルダ（デフォルト: `download/`）を作成し、[RSシステム](https://rssystem.go.jp/download-csv)からダウンロードしたZIPファイルをすべて格納します。
+4.  **APIキーの設定:**
+    プロジェクトのルートに`.env`ファイルを作成し、ご自身のGoogle AI APIキーを設定します。
+    ```
+    GOOGLE_API_KEY="YOUR_API_KEY_HERE"
+    ```
 
-GPUを利用すると、特にベクトル化の処理（ステップ2）が高速になりますが、CPU環境でも数分程度で処理は完了します。
+### 2.2. DuckDBの構築（構造化DB）
 
-#### ColabでGPUを有効にする方法
-もし処理速度を上げたい場合は、以下の手順でGPUを有効にできます。（※無料版では利用時間に制限があるためご注意ください）
-1.  上部メニューの「ランタイム」をクリック
-2.  「ランタイムのタイプを変更」を選択
-3.  「ハードウェア アクセラレータ」のドロップダウンから「T4 GPU」を選択して保存
-
-## 3. 分析ワークフロー
-
-### ステップ0：Colab環境構築
-
-まず、Colabノートブック上で分析環境をセットアップします。
-
-#### セル 1: Driveのマウントとリポジトリのクローン
-```python
-from google.colab import drive
-drive.mount('/content/drive')
-
-# リポジトリをクローン
-!git clone https://github.com/igomuni/rssystem_db.git /content/rssystem_db
+以下のコマンドを実行し、すべてのCSVデータを単一の構造化データベースファイル `rs_database.duckdb` に変換します。
+```bash
+python import_zips_to_duckdb.py
 ```
 
-#### セル 2: データベースの配置とライブラリのインストール
-**注意:** `DRIVE_DB_PATH`と`DRIVE_VECTOR_STORE_PATH`を、ご自身のGoogle Drive上のパスに合わせて書き換えてください。
+### 2.3. ベクトルDBの構築（RAG用DB）
+
+次に、自然言語検索の土台となるベクトルデータベースを構築します。この処理はAPIを呼び出すため、数十分かかる場合があります。
+```bash
+python analysis/build_vector_store.py
+```
+実行が完了すると、プロジェクトルートに `vector_store/` フォルダが生成されます。
+
+## 3. 【Phase 2】 成果物のGoogle Driveへのアップロード
+
+Colabからアクセスできるよう、Phase 1で生成したデータ資産をZIP形式に圧縮し、Google Driveにアップロードします。
+
+### 3.1. 成果物の圧縮
+
+ローカルPCのターミナルで、お使いのOSに応じたコマンドを実行します。
+
+- **macOS / Linux の場合:**
+  ```bash
+  # rs_database.duckdb を圧縮
+  zip rs_database.zip rs_database.duckdb
+
+  # vector_store/ フォルダを圧縮
+  zip -r vector_store.zip vector_store
+  ```
+
+- **Windows (PowerShell) の場合:**
+  ```powershell
+  # rs_database.duckdb を圧縮
+  Compress-Archive -Path rs_database.duckdb -DestinationPath rs_database.zip
+
+  # vector_store/ フォルダを圧縮
+  Compress-Archive -Path vector_store -DestinationPath vector_store.zip
+  ```
+
+### 3.2. Google Driveへのアップロード
+
+1.  ご自身のGoogle Drive内に、このプロジェクト専用のフォルダを作成します。（例: `Colab Notebooks/rs_system_data`）
+2.  作成した `rs_database.zip` と `vector_store.zip` の2つのファイルを、そのフォルダにアップロードします。
+
+---
+---
+
+## 4. 【Phase 3】 Google Colabでの手動RAG分析
+
+ここからは、Google Colabのノートブック上での作業です。API上限時でも、AIアシスタントを「思考エンジン」として活用し、分析を進めます。
+
+### 4.1. CPUとGPUの利用について
+この手順書のスクリプトは、Colab環境にGPUが割り当てられているかを自動で判別し、最適なデバイスを利用します。GPUを利用するとベクトル化処理が高速になりますが、**CPU環境でも全く問題なく実行可能**です。
+
+**（任意）GPUを有効にする方法:**
+1. Colab上部メニューの「ランタイム」→「ランタイムのタイプを変更」
+2. 「ハードウェア アクセラレータ」で「T4 GPU」を選択して保存
+
+### 4.2. Colab環境の初期セットアップ
+
+新しいColabノートブックを作成し、**最初のコードセル**に以下の内容を貼り付けて実行します。`DRIVE_DATA_PATH`は、ご自身の環境に合わせて修正してください。
 
 ```python
+# ==================================
+#  Colab環境 初期セットアップセル
+# ==================================
+from google.colab import drive
+from pathlib import Path
 import os
 import sys
 
-PROJECT_ROOT = "/content/rssystem_db"
-if PROJECT_ROOT not in sys.path:
-    sys.path.append(PROJECT_ROOT)
+# --- 1. Google Driveへの接続 ---
+print("--- Step 1: Google Driveへの接続 ---")
+drive.mount('/content/drive')
 
-# --- ★★★★★ 自身のGoogle Driveのパスに書き換える ★★★★★ ---
-DRIVE_DB_PATH = "/content/drive/MyDrive/path/to/your/rs_database.duckdb"
-DRIVE_VECTOR_STORE_PATH = "/content/drive/MyDrive/path/to/your/vector_store"
-# -------------------------------------------------------------
+# --- 2. パス設定 (★ご自身の環境に合わせて変更) ---
+# ZIPファイル等をアップロードしたGoogle Drive上のフォルダパス
+DRIVE_DATA_PATH = Path('/content/drive/MyDrive/Colab Notebooks/rs_system_data')
+PROJECT_NAME = 'rssystem_db'
+PROJECT_PATH = Path(f'/content/{PROJECT_NAME}')
 
-# データベースファイルをColab環境にコピー
-!cp "{DRIVE_DB_PATH}" "{PROJECT_ROOT}/rs_database.duckdb"
-!cp -r "{DRIVE_VECTOR_STORE_PATH}" "{PROJECT_ROOT}/"
+# --- 3. GitHubからソースコードをクローン ---
+print(f"\n--- Step 2: GitHubから '{PROJECT_NAME}' をクローンします ---")
+os.system(f'git clone -q https://github.com/igomuni/rssystem_db.git {PROJECT_PATH}')
+os.chdir(PROJECT_PATH)
+if str(PROJECT_PATH) not in sys.path:
+    sys.path.append(str(PROJECT_PATH))
 
-# 必要なライブラリをインストール
-!pip install -q -r "{PROJECT_ROOT}/requirements.txt"
-print("環境構築が完了しました。")
+# --- 4. 必要なデータの展開 ---
+print(f"\n--- Step 3: '{PROJECT_PATH}' にデータを展開します ---")
+os.system(f'unzip -q -o "{DRIVE_DATA_PATH / "rs_database.zip"}" -d "{PROJECT_PATH}"')
+os.system(f'unzip -q -o "{DRIVE_DATA_PATH / "vector_store.zip"}" -d "{PROJECT_PATH}"')
+
+# --- 5. ライブラリのインストール ---
+print("\n--- Step 4: ライブラリインストール ---")
+os.system('pip install -q -r requirements.txt')
+
+# --- 6. 最終確認 ---
+print("\n--- Step 5: 最終的なプロジェクトフォルダの中身を確認します ---")
+os.system('ls -l')
+print(f"\n[成功] プロジェクト環境の構築が完了しました！")
 ```
 
----
+### 4.3. AIアシスタント（思考エンジン）との共同分析
 
-### 【思考エンジンとの対話開始】
+環境が整ったら、AIアシスタントとの対話を開始し、以下の手順で分析を進めます。各ステップで得られた**出力結果**をAIに渡し、次の指示（コード）を受け取ります。
+（※プロンプトの詳細は `prompt_examples.md` を参照）
 
-ここから、AIアシスタント（思考エンジン）との対話を開始します。各ステップで得られた**出力結果**を思考エンジンに渡し、次の指示（コード）を受け取ります。
+#### **ステップ1：データベース構造の理解**
+思考エンジンに分析対象となるDuckDBのスキーマを最初に理解させます。
 
----
-
-### ステップ1：データベース構造の理解
-
-RAGの精度を高めるため、思考エンジンに分析対象となるDuckDBのスキーマ（設計図）を最初に理解させます。
-
-#### セル 3: スキーマ確認
 ```python
+# セル2：スキーマ確認
 import duckdb
-import pandas as pd
+DB_FILE = f"{PROJECT_PATH}/rs_database.duckdb"
+TARGET_TABLES = ["基本情報_事業概要等", "支出先_支出情報_明細"]
 
-DB_FILE = "/content/rssystem_db/rs_database.duckdb"
-TARGET_TABLES = [
-    "基本情報_事業概要等",
-    "支出先_支出情報_明細"
-]
-
-try:
-    con = duckdb.connect(database=DB_FILE, read_only=True)
-    print(f"データベース '{DB_FILE}' に接続し、主要テーブルのスキーマを詳細に確認します。")
-
-    for table_name in TARGET_TABLES:
-        print(f"\n--- テーブル '{table_name}' のスキーマ詳細 ---")
-        schema_df = con.sql(f'DESCRIBE "{table_name}";').to_df()
-        schema_df.columns = ["カラム名", "データ型", "Null許容", "主キー", "デフォルト値", "その他"]
-        print(schema_df.to_markdown(index=False))
-
-    con.close()
-
-except Exception as e:
-    print(f"\nエラーが発生しました: {e}")
+con = duckdb.connect(database=DB_FILE, read_only=True)
+for table_name in TARGET_TABLES:
+    print(f"\n--- テーブル '{table_name}' のスキーマ詳細 ---")
+    schema_df = con.sql(f'DESCRIBE "{table_name}";').to_df()
+    schema_df.columns = ["カラム名", "データ型", "Null許容", "主キー", "デフォルト値", "その他"]
+    print(schema_df.to_markdown(index=False))
+con.close()
 ```
-> **思考エンジンへの指示:**
-> このセルの**出力結果（2つのテーブルスキーマ情報）**をすべてコピーし、「これがデータベースの設計図です」と伝えてください。
 
-### ステップ2：ベクトル検索によるコンテキスト情報の取得 (Retrieval)
+#### **ステップ2：ベクトル検索によるコンテキスト情報の取得 (Retrieval)**
+自然言語の質問に基づき、関連性の高い事業IDをベクトルDBから検索します。
 
-自然言語の質問をベクトル化し、関連性の高い事業IDをベクトルDBから検索します。
-
-#### セル 4: ベクトル検索
 ```python
-import sys
+# セル3：ベクトル検索
 import torch
 import chromadb
 from sentence_transformers import SentenceTransformer
-import pandas as pd
-
-# --- 設定 ---
-PROJECT_ROOT = "/content/rssystem_db"
-if PROJECT_ROOT not in sys.path:
-    sys.path.append(PROJECT_ROOT)
-CHROMA_DB_PATH = f"{PROJECT_ROOT}/vector_store"
-COLLECTION_NAME = "rs_system_rag"
-EMBEDDING_MODEL_NAME = 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2'
 
 # --- ★★★★★ ここに分析したい質問を入力 ★★★★★ ---
 question = "ガソリン減税に関連しそうな事業の、支出先トップ3とその金額は？"
-# ------------------------------------------------
 
-try:
-    # CPU/GPUを自動で判別
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f"使用するデバイス: {device.upper()}")
-    
-    model = SentenceTransformer(EMBEDDING_MODEL_NAME, device=device)
-    client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
-    collection = client.get_collection(name=COLLECTION_NAME)
-    
-    question_embedding = model.encode(question).tolist()
-    results = collection.query(
-        query_embeddings=[question_embedding],
-        n_results=10,
-        include=["metadatas"]
-    )
-    print("\nベクトル検索が完了しました。")
+# --- 設定 ---
+CHROMA_DB_PATH = f"{PROJECT_PATH}/vector_store"
+COLLECTION_NAME = "rs_system_rag"
+EMBEDDING_MODEL_NAME = 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2'
 
-    if not results["ids"][0]:
-        print("関連する情報が見つかりませんでした。")
-    else:
-        df = pd.DataFrame({
-            '予算事業ID': [meta.get('予算事業ID', 'N/A') for meta in results['metadatas'][0]],
-        })
-        unique_ids = df['予算事業ID'].unique().tolist()
-        
-        print(f"\n質問に関連する可能性のある事業IDが {len(unique_ids)}件 見つかりました。")
-        print("これらのIDを基に、データベースへ問い合わせるSQLを生成します。")
-        print("\n--- コンテキスト情報 (ユニークな事業IDリスト) ---")
-        print(unique_ids)
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f"使用するデバイス: {device.upper()}")
 
-except Exception as e:
-    print(f"\nエラーが発生しました: {e}")
+model = SentenceTransformer(EMBEDDING_MODEL_NAME, device=device)
+client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+collection = client.get_collection(name=COLLECTION_NAME)
+
+question_embedding = model.encode(question).tolist()
+results = collection.query(query_embeddings=[question_embedding], n_results=10, include=["metadatas"])
+
+unique_ids = sorted(list(set(meta.get('予算事業ID') for meta in results['metadatas'])))
+print("\n--- コンテキスト情報 (ユニークな事業IDリスト) ---")
+print(unique_ids)
 ```
-> **思考エンジンへの指示:**
-> このセルの**出力結果（ユニークな事業IDのリスト）**をコピーし、「このコンテキスト情報を基に、元の質問に答えるためのSQLクエリを生成してください」と依頼してください。
 
-### ステップ3：SQLの実行とデータ取得
+#### **ステップ3：SQLの実行とデータ取得**
+思考エンジンが生成したSQLクエリを実行し、最終回答の根拠となるデータを取得します。
 
-思考エンジンが生成したSQLクエリをDuckDBで実行し、最終回答の根拠となるデータを取得します。
-
-#### セル 5: SQL実行
 ```python
+# セル4：SQL実行
 import duckdb
 import pandas as pd
-
-DB_FILE = "/content/rssystem_db/rs_database.duckdb"
+DB_FILE = f"{PROJECT_PATH}/rs_database.duckdb"
 
 # --- ★★★★★ 思考エンジンが生成したSQLクエリをここに貼り付け ★★★★★ ---
 sql_query = """
-SELECT
-    "支出先名",
-    SUM("金額") AS "合計支出額"
-FROM
-    "支出先_支出情報_明細"
-WHERE
-    "予算事業ID" IN (4212, 20314, 5145, 5261, 5192, 7519, 7375, 5266, 20091, 5115)
-GROUP BY
-    "支出先名"
-ORDER BY
-    "合計支出額" DESC
-LIMIT 3;
+SELECT "支出先名", SUM("金額") AS "合計支出額"
+FROM "支出先_支出情報_明細"
+WHERE "予算事業ID" IN (4212, 5115, 5145, 5192, 5261, 5266, 7375, 7519, 20091, 20314)
+GROUP BY "支出先名" ORDER BY "合計支出額" DESC LIMIT 3;
 """
-# -----------------------------------------------------------------
 
-try:
-    con = duckdb.connect(database=DB_FILE, read_only=True)
-    result_df = con.sql(sql_query).to_df()
-    con.close()
+con = duckdb.connect(database=DB_FILE, read_only=True)
+result_df = con.sql(sql_query).to_df()
+con.close()
 
-    if not result_df.empty:
-        result_df["合計支出額"] = result_df["合計支出額"].apply(lambda x: f"{x:,.0f}")
-    
-    print("--- SQL実行結果 ---")
-    print(result_df.to_markdown(index=False))
+if not result_df.empty:
+    result_df["合計支出額"] = result_df["合計支出額"].apply(lambda x: f"{x:,.0f}")
 
-except Exception as e:
-    print(f"\nエラーが発生しました: {e}")
+print("--- SQL実行結果 ---")
+print(result_df.to_markdown(index=False))
 ```
-> **思考エンジンへの指示:**
-> このセルの**出力結果（Markdown形式のテーブル）**をコピーし、「このデータを基に、元の質問に対する最終的な回答を自然な日本語で生成してください」と依頼してください。
 
-### ステップ4：最終回答の取得 (Generation)
-
-思考エンジンが、SQLの実行結果を解釈し、ユーザーにとって分かりやすい最終回答を生成します。この回答をもって、一連の分析は完了です。
+#### **ステップ4：最終回答の取得 (Generation)**
+AIアシスタントが、SQLの実行結果を解釈し、最終的な回答を生成します。これで分析は完了です。

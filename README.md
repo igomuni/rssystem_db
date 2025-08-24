@@ -41,11 +41,16 @@
 │   ├── README.md
 │   └── ...
 |
-└── analysis/               # ★ 特定の「分析や応用」を行うスクリプトの置き場所
-    └── get_business_details.py
+├── analysis/               # ★ 特定の「分析や応用」を行うスクリプトの置き場所
+│   └── README.md
+|
+└── colab_manual_rag/       # ★ Colabでの対話型分析ガイド
+    └── README.md
 ```
 
 ## 使い方
+
+このプロジェクトは、主にローカルPC上で完結するコマンドラインツールとして設計されています。
 
 ### 1. セットアップ
 
@@ -75,28 +80,27 @@
 
 ### 3. データ分析の実行
 
-#### A) 汎用的なSQLクエリの実行
+`analysis/` フォルダ内の各スクリプト、または `run_query.py` を使って分析を行います。
+詳細な使い方は `analysis/README.md` を参照してください。
 
-`run_query.py` を使って、`sql/` フォルダ内のSQLクエリなどを実行します。
-
-- **デフォルトクエリを実行 (結果は`results/`にCSVで保存):**
+- **例：特定の予算事業IDに紐づく全情報をJSONで出力:**
   ```bash
-  python run_query.py
-  ```
-- **指定したSQLファイルを実行し、結果をファイルに出力:**
-  ```bash
-  python run_query.py -q sql/my_analysis.sql -o my_result.csv
+  python analysis/get_business_details.py 7259 -o results/business_7259.json
   ```
 
-#### B) 特定の分析スクリプトの実行
+---
 
-`analysis/` フォルダ内のスクリプトを使い、より高度な分析を行います。
+## Google Colabでの対話型分析 (RAG)
 
-- **特定の予算事業IDに紐づく全情報をJSONで出力:**
-  ```bash
-  # ID:7259の情報を、results/business_7259.json に保存
-  python analysis/get_business_details.py 7259 -o business_7259.json
-  ```
+このプロジェクトは、Google Colab上で対話型AIアシスタントと協力しながら、より柔軟な分析を行うためのワークフローも提供します。
+
+この方法は、APIの無料枠上限に達した場合でも、AIチャットをLLMの「思考エンジン」の代わりとして利用し、手動でRAG（Retrieval-Augmented Generation）分析を進めるための強力な手段となります。
+
+セットアップから分析実行までの完全な手順については、以下のガイドを参照してください。
+
+**[▶ colab_manual_rag/README.md](./colab_manual_rag/README.md)**
+
+---
 
 ## データセットの配布と利用 (GitHub Releases)
 
