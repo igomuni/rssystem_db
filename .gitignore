@@ -2,6 +2,7 @@
 .ignore/
 *.duckdb
 rs_database*.zip
+vector_store*.zip
 download/
 results/
 
