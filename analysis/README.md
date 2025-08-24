@@ -6,173 +6,143 @@
 
 ---
 
-## 1. 自然言語での対話型データベース分析 (RAG System)
+## 1. 自然言語での対話型分析 (RAG System)
 
-**日本語の自然な質問**をするだけで、この複雑な財政データベースから**正確な答え**を引き出せる、インテリジェントな分析システムを構築する。
+このプロジェクトの最終目標である、自然言語でデータベースに質問するためのコア機能です。**RAG (Retrieval-Augmented Generation)** というAIアーキテクチャを採用しています。
 
-これを実現するために、**RAG (Retrieval-Augmented Generation)** という最新のAIアーキテクチャを採用しています。システムは、以下の2つのデータベースを連携させて動作します。
+### ワークフロー
 
-1.  **構造化データベース (DuckDB):**
-    金額やIDといった、正確な数値データを格納する、プロジェクトのメインDB。
-2.  **ベクトルデータベース (ChromaDB):**
-    事業名や契約概要といった、テキストデータの「意味」をベクトルとして格納する、意味検索用のDB。
+1.  **DuckDBの構築:** ルートの`import_zips_to_duckdb.py`で`rs_database.db`を作成。
+2.  **ベクトルDBの構築:** `build_vector_store.py`でテキストデータの「意味」をベクトル化。
+3.  **自然言語で質問:** `ask_with_rag.py`で、日本語の質問からSQLを自動生成・実行。
 
-### RAGシステム利用までのワークフロー
+### `ask_with_rag.py`
 
-この対話型分析システムを利用可能にするには、以下のステップを実行します。
+- **目的:** 自然言語の質問をAIが解釈し、ベクトル検索とLLMを駆使して高精度なSQLを自動生成・実行します。
+- **使い方:**
+  ```bash
+  python analysis/ask_with_rag.py "ガソリン減税に関連しそうな事業の支出先トップ3は？"
+  ```
 
-#### Step 1: DuckDBの構築 (CSVから構造化DBへ)
+### `build_vector_store.py`
 
-まず、プロジェクトのルートディレクトリにあるスクリプトを使い、ダウンロードしたZIP/CSVデータから、分析の土台となるDuckDBファイルを生成します。
-
-```bash
-# プロジェクトのルートディレクトリで実行
-python import_zips_to_duckdb.py
-```
-これにより、`rs_database.duckdb` が作成されます。
-
-#### Step 2: ベクトルDBの構築 (DuckDBからベクトルDBへ)
-
-次に、`analysis/`フォルダ内のスクリプトを使い、DuckDBからテキスト情報を抽出し、意味検索のためのベクトルデータベースを構築します。この処理は、APIを呼び出すため時間がかかりますが、**初回またはDB更新時に一度だけ**行えばOKです。
-
-- **`build_vector_store.py`**
-  - **目的:** DuckDBから事業名や契約概要を読み込み、Google AIのEmbeddingモデルで「意味ベクトル」に変換し、ローカルのChromaDBに保存します。
-  - **使い方:**
-    ```bash
-    # (事前に.envファイルにAPIキーの設定が必要です)
-    python analysis/build_vector_store.py
-    ```
-    これにより、`vector_store/` フォルダが作成されます。
-
-#### Step 3: 自然言語での質問 (RAGの実行)
-
-データ基盤の準備が整ったら、いよいよ自然言語でデータベースに質問します。
-
-- **`ask_with_rag.py`**
-  - **目的:** ユーザーからの自然な質問をAIが解釈し、まずベクトルDBで関連情報を検索（Retrieval）、その情報を元にLLMが高精度なSQLを生成（Generation）、最終的な答えをDuckDBから導き出します。
-  - **使い方:**
-    ```bash
-    # 「ガソリン減税」に関連する事業の支出先トップ3を調べる
-    python analysis/ask_with_rag.py "ガソリン減税に関連しそうな事業の、支出先トップ3とその金額を教えて"
-
-    # 特定の企業への支出について調べる
-    python analysis/ask_with_rag.py "博報堂への支出で、金額が大きいものを3つ教えて"
-    ```
+- **目的:** `ask_with_rag.py`が使用するベクトルデータベースを構築します。
+- **使い方 (初回またはDB更新時に実行):**
+  ```bash
+  # (.envファイルにAPIキーの設定が必要です)
+  python analysis/build_vector_store.py
+  ```
 
 ---
 
-## 2. データ品質と整合性の検証
+## 2. 分析シナリオの自動実行エンジン
 
-データベースの健全性をチェックし、分析の信頼性を高めるためのスクリプト群です。
+### `run_scenario.py`
+
+- **目的:**
+  この分析プラットフォームの**自動実行エンジン**です。後述するYAML形式の「分析計画書」を読み込み、そこに記述された一連の分析ステップを**自動的に、順番に実行**します。
+
+- **使い方:**
+  ```bash
+  # デフォルトのシナリオファイル(analysis_scenarios/analysis_scenarios.yaml)を実行
+  python analysis/run_scenario.py
+
+  # 別のシナリオファイルを指定して実行
+  python analysis/run_scenario.py path/to/another_scenario.yaml
+  ```
+  これにより、再現可能な分析ワークフローを、コマンド一つで実行できます。
+
+### 分析シナリオYAMLファイルの書き方
+
+分析の目的、仮説、そして実行する一連のステップを、`analysis_scenarios/`フォルダ内の`.yaml`ファイルに記述します。
+
+#### 基本構造
+
+YAMLファイルは、「シナリオ」のリストとして構成されます。各シナリオは、以下のキーを持ちます。
+
+- `scenario_name`: (必須) シナリオ全体の名前。
+- `purpose`: (推奨) この分析シナリオの目的を記述します。
+- `hypothesis`: (推奨) この分析を通じて検証したい仮説を記述します。
+- `steps`: (必須) 実行する「ステップ」のリスト。
+
+各ステップは、以下のキーを持ちます。
+
+- `description`: (必須) このステップが何をするかの説明。
+- `script`: (必須) 呼び出す`analysis/`フォルダ内のPythonスクリプト名（`.py`は不要）。
+- `params`: (任意) スクリプトに渡すコマンドライン引数を、キーと値のペアで記述します。
+
+#### サンプル (`analysis_scenarios/analysis_scenarios.yaml`)
+```yaml
+- scenario_name: "シナリオ1：府省庁ごとのデータ品質比較"
+  purpose: |
+    各府省庁が登録している事業データにおいて、「事業名」と「契約概要」の
+    論理的な整合性に差があるかを統計的に検証する。
+  steps:
+    - description: "1.1 デジタル庁のデータ監査"
+      script: audit_text_consistency
+      params:
+        sample_size: 100
+        ministry: "デジタル庁"
+        free_tier_safe: True # ← ★注釈対象
+
+- scenario_name: "シナリオ2：「高額案件」の集中監査"
+  # ...
+```
+
+#### **`free_tier_safe`フラグについて (重要)**
+
+`audit_text_consistency.py`などのLLMを呼び出すスクリプトでは、`free_tier_safe`というパラメータを指定できます。
+
+- **目的:** Google AI Studioなどの**無料API枠**に設定されている、1分間あたりのリクエスト数上限（レートリミット）に達するのを防ぎます。
+- **機能:** このフラグを `True` に設定すると、スクリプトは以下の「安全運転」モードで動作します。
+    1.  各APIリクエストの間に**1秒間の待機時間**を設けます。
+    2.  レートリミットエラー（429）が発生した場合、**自動的に待機し、処理を再試行**します。
+- **使い方:**
+  - **無料APIキーを使っている場合:** 安定した実行のために、**必ず `free_tier_safe: True` を設定**してください。
+  - **有料プランに移行した場合:** このフラグを**省略または `False` に設定**することで、待機時間なく、最速で分析を実行できます。
+
+---
+
+## 3. AIによるデータ監査と品質チェック
+
+LLMを活用して、データの品質や整合性を「意味」のレベルで監査するスクリプト群です。
+
+### `audit_text_consistency.py`
+
+- **目的:** LLMに「会計検査官」の役割を与え、「事業名」と「契約概要」の論理的な整合性を自動でスコアリング・評価します。`run_scenario.py`から呼び出されることを主目的とします。
 
 ### `generate_data_quality_report.py`
 
-- **目的:**
-  データベース全体をスキャンし、「明細行なのに支出先名が空欄」など、データの構造を理解した上で、品質が低い可能性のあるレコードを網羅的にリストアップします。
+- **目的:** データベース全体をスキャンし、「明細行なのに支出先名が空欄」など、データの構造を理解した上で、品質が低い可能性のあるレコードを網羅的にリストアップします。
 - **使い方:**
   ```bash
   python analysis/generate_data_quality_report.py
   ```
 
-### `validate_summary_details_split.py`
-
-- **目的:**
-  分割した「支出先_支出情報_サマリー」と「支出先_支出情報_明細」の金額が、会計区分をまたいで完全に一致することを検証し、データ分割の正当性を証明します。
-- **使い方:**
-  ```bash
-  python analysis/validate_summary_details_split.py
-  ```
-
-### `validate_details_breakdown.py`
-
-- **目的:**
-  「支出先_支出情報_明細」の契約額と、「支出先_費目・使途」の内訳合計額の間に、なぜ乖離が発生するのかを調査・検証します。
-- **使い方:**
-  ```bash
-  python analysis/validate_details_breakdown.py
-  ```
-
 ---
 
-## 3. 予算と支出のバランス分析
+## 4. 予算と支出の構造分析
 
 事業ごとの予算と支出の関係性を多角的に分析し、データセットの会計上の特性を解き明かすための一連のスクリプトです。
 
-### `check_project_balance_by_year.py`
-
-- **目的:**
-  指定された`予算年度`の予算総額と、支出情報テーブルの支出総額を事業ごとに比較し、「見かけ上の予算超過」が発生している事業をリストアップします。
-- **使い方:**
-  ```bash
-  # 2024年度予算と比較 (デフォルト)
-  python analysis/check_project_balance_by_year.py
-
-  # 2023年度予算と比較
-  python analysis/check_project_balance_by_year.py 2023
-  ```
-
-### `analyze_project_balance.py`
-
-- **目的:**
-  `check_..._by_year.py`で見つかった「予算超過」事業について、その原因が「国庫債務負担行為」や「マイナス予算」などに起因するのかを自動で推定・分類します。
-- **使い方:**
-  ```bash
-  python analysis/analyze_project_balance.py
-  ```
-
-### `compare_execution_rates.py` & `find_consistent_projects.py`
-
-- **目的:**
-  元データにある`執行率`と、支出実態から計算した`執行率`の乖離を分析します。`compare...`は乖離が大きい事業を、`find...`は乖離が小さい（一致する）事業をリストアップします。
-- **使い方:**
-  ```bash
-  python analysis/compare_execution_rates.py
-  python analysis/find_consistent_projects.py
-  ```
+- **`check_project_balance_by_year.py`**: 指定年度の予算と支出総額を比較し、「見かけ上の予算超過」事業をリストアップします。
+- **`analyze_project_balance.py`**: 「予算超過」の原因を「国庫債務負担行為」などに自動で推定・分類します。
+- **`compare_execution_rates.py` / `find_consistent_projects.py`**: 元データと実態ベースの執行率の乖離を分析し、会計処理の複雑さを評価します。
 
 ---
 
-## 4. 個別テーマ分析とデータ整形
+## 5. 個別テーマ分析とデータ整形
 
 特定の事業を深掘りしたり、他のツールで可視化するためのデータを整形するスクリプトです。
 
-### `get_business_details.py`
+- **`get_business_details.py`**: 特定の事業IDの全情報をJSONで一括抽出します。
+- **`analyze_related_projects.py`**: 特定事業の「関連事業」構成を分析します。
+- **`flatten_json_for_looker.py`**: 階層型JSONを、Looker Studio用の平坦なCSVに変換します。
+- **`extract_text_data.py`**: DBから分析用のテキストデータをCSVとして抽出します。
+- **`validate_summary_details_split.py`**: 分割したサマリー/明細テーブルの金額の整合性を検証します。
+- **`validate_details_breakdown.py`**: 支出明細とその費目・使途の内訳の乖離を調査します。
 
-- **目的:**
-  指定された単一の`予算事業ID`に紐づく全情報を、階層型JSONとして一括で抽出します。
-- **使い方:**
-  ```bash
-  python analysis/get_business_details.py 7259 -o results/business_7259.json
-  ```
-
-### `analyze_related_projects.py`
-
-- **目的:**
-  指定された事業ID（または予算最大の事業）の「関連事業」構成を分析し、レポートします。
-- **使い方:**
-  ```bash
-  # 予算最大の事業を分析
-  python analysis/analyze_related_projects.py
-  ```
-
-### `flatten_json_for_looker.py`
-
-- **目的:**
-  `get_business_details.py`で生成した階層型JSONを、Looker StudioなどのBIツールで扱いやすい平坦なCSV形式に変換します。サンキーチャートの作成などに利用します。
-- **使い方:**
-  ```bash
-  python analysis/flatten_json_for_looker.py results/business_7259.json looker_ready_7259.csv
-  ```
-
-### `extract_text_data.py` & `generate_wordclouds.py`
-
-- **目的:**
-  `extract...`でDBからテキストデータを抽出し、`generate...`でそのテキストデータからワードクラウド画像を生成します。
-- **使い方:**
-  ```bash
-  python analysis/extract_text_data.py
-  python analysis/generate_wordclouds.py
-  ```
+---
 
 ## 分析結果の活用
 

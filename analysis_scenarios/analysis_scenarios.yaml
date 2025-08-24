@@ -1,0 +1,44 @@
+- scenario_name: "シナリオ1：府省庁ごとのデータ品質比較"
+  purpose: |
+    各府省庁が登録している事業データにおいて、「事業名」と「契約概要」の
+    論理的な整合性に差があるかを統計的に検証する。
+  hypothesis: |
+    - システム開発関連の契約が多い「デジタル庁」では、スコアが高い傾向にあるのではないか。
+    - 多種多様な補助金を持つ「文部科学省」では、スコアにばらつきが見られるのではないか。
+  steps:
+    - description: "1.1 デジタル庁のデータ監査"
+      script: audit_text_consistency
+      params:
+        sample_size: 100
+        ministry: "デジタル庁"
+        free_tier_safe: True
+
+    - description: "1.2 文部科学省のデータ監査"
+      script: audit_text_consistency
+      params:
+        sample_size: 100
+        ministry: "文部科学省"
+        free_tier_safe: True
+
+- scenario_name: "シナリオ2：「高額案件」の集中監査"
+  purpose: |
+    支出金額が大きい重要な契約について、事業目的と契約内容の整合性が
+    保たれているかを重点的に監査する。
+  hypothesis: |
+    高額案件にもかかわらず整合性スコアが低いものは、契約内容の記述が不十分で
+    ある可能性を示す「要注意シグナル」となる。
+  steps:
+    - description: "2.1 全省庁の高額案件トップ100"
+      script: audit_text_consistency
+      params:
+        sort_by: "金額"
+        top_n: 100
+        free_tier_safe: True
+
+    - description: "2.2 防衛省の高額案件トップ50"
+      script: audit_text_consistency
+      params:
+        ministry: "防衛省"
+        sort_by: "金額"
+        top_n: 50
+        free_tier_safe: True
