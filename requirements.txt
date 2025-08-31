@@ -1,12 +1,18 @@
-# requirements.txt
+# Core Data Handling
 pandas
 duckdb
+
+# Configuration & Utilities
 PyYAML
-requests
 python-dotenv
 tqdm
+
+# AI & RAG (Vector Search)
 chromadb
 google-generativeai
 langchain
 langchain_community
 langchain_google_genai
+
+# Web Application
+streamlit
